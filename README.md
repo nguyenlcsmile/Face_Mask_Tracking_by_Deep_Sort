@@ -3,4 +3,4 @@
 Run: 
 
     Realtime: python main.py realtime 
-    Image test: python main.py image --path image.jpg
+    Image test: python main.py image --path images_test/image_1.jpg
