@@ -4,7 +4,7 @@ Run:
 
     Realtime: python main.py realtime 
     
-Uploading Face_Mask.mp4…
+https://user-images.githubusercontent.com/73431832/131264262-af46dd90-aefe-4679-a02a-150d8973493b.mp4
 
     Image test: python main.py image --path images_test/image_1.jpg
 
