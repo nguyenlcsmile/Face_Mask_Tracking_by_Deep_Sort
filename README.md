@@ -4,7 +4,7 @@ Run:
 
     Realtime: python main.py realtime 
     
-    Uploading Face_Mask.mp4…
+Uploading Face_Mask.mp4…
 
     Image test: python main.py image --path images_test/image_1.jpg
 
