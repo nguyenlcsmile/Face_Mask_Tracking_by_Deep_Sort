@@ -76,52 +76,52 @@ def realtime_webcam():
 				# Call the tracker
 				tracker.predict()
 				tracker.update(detections_tracking)
+				try:
+					for det in detections_tracking:
+						bbox = det.to_tlbr()
+						if show_detections and len(classes) > 0:
+							# đảm bảo bounding box nằm trong kích thước frame
+							(startX, startY) = (max(0, bbox[0]), max(0, bbox[1]))
+							(endX, endY) = (min(w - 1, bbox[2]), min(h - 1, bbox[3]))
 
-				for det in detections_tracking:
-					bbox = det.to_tlbr()
-					if show_detections and len(classes) > 0:
-						# đảm bảo bounding box nằm trong kích thước frame
+							# trích ra face ROI, chuyển image từ BGR sang RGB, resize về 224x224 và preprocess
+							face = image[int(startY):int(endY), int(startX):int(endX)]
+							face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+							face = cv2.resize(face, (224, 224))
+							face = img_to_array(face)
+							face = preprocess_input(face)
+							face = np.expand_dims(face, axis=0)
+
+							# dùng model đã train để predict mask or no mask
+							(mask, withoutMask) = model.predict(face)[0]
+
+							# xác định class label và color để vẽ bounding box và text
+							label = "Mask" if mask > withoutMask else "No Mask"
+							color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+
+							# đính thêm thông tin về xác suất(probability) của label
+							label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+							# display label và bounding box hình chữ nhật trên output frame
+							cv2.putText(image, label, (int(startX), int(startY) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+							cv2.rectangle(image, (int(startX), int(startY)), (int(endX), int(endY)), color, 2)
+
+					for track in tracker.tracks:
+						print(track)
+						if not track.is_confirmed() or track.time_since_update > 1:
+							continue
+						bbox = track.to_tlbr()
+						# print(bbox)
 						(startX, startY) = (max(0, bbox[0]), max(0, bbox[1]))
 						(endX, endY) = (min(w - 1, bbox[2]), min(h - 1, bbox[3]))
-
-						# trích ra face ROI, chuyển image từ BGR sang RGB, resize về 224x224 và preprocess
-						face = image[int(startY):int(endY), int(startX):int(endX)]
-						face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
-						face = cv2.resize(face, (224, 224))
-						face = img_to_array(face)
-						face = preprocess_input(face)
-						face = np.expand_dims(face, axis=0)
-
-						# dùng model đã train để predict mask or no mask
-						(mask, withoutMask) = model.predict(face)[0]
-
-						# xác định class label và color để vẽ bounding box và text
-						label = "Mask" if mask > withoutMask else "No Mask"
-						color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
-
-						# đính thêm thông tin về xác suất(probability) của label
-						label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
-						# display label và bounding box hình chữ nhật trên output frame
-						cv2.putText(image, label, (int(startX), int(startY) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-						cv2.rectangle(image, (int(startX), int(startY)), (int(endX), int(endY)), color, 2)
-
-				for track in tracker.tracks:
-					print(track)
-					if not track.is_confirmed() or track.time_since_update > 1:
-						continue
-					bbox = track.to_tlbr()
-					# print(bbox)
-					(startX, startY) = (max(0, bbox[0]), max(0, bbox[1]))
-					(endX, endY) = (min(w - 1, bbox[2]), min(h - 1, bbox[3]))
-					# adc = "%.2f" % (track.adc * 100) + "%"  # Average detection confidence
-					cv2.rectangle(image, (int(startX), int(startY)), (int(endX), int(endY)), (255, 255, 255), 2)
-					cv2.putText(image, "ID: " + str(track.track_id), (int(startX), int(endY) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
-
-
+						# adc = "%.2f" % (track.adc * 100) + "%"  # Average detection confidence
+						cv2.rectangle(image, (int(startX), int(startY)), (int(endX), int(endY)), (255, 255, 255), 2)
+						cv2.putText(image, "ID: " + str(track.track_id), (int(startX), int(endY) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
+				except:
+					pass
 		if cv2.waitKey(10) & 0xFF == ord("q"):
 			break
 		# show output image
-		cv2.imshow("Output", image)
+		cv2.imshow("Output", cv2.resize(image, (720, 480)))
 		# cleanup
 	# When everything is done, release the capture
 	cap.release()
